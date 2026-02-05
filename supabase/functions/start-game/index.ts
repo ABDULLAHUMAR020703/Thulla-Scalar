@@ -6,7 +6,7 @@
 // ============================================
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
 
 // ============================================
 // TYPES
@@ -231,7 +231,21 @@ serve(async (req: Request) => {
             );
         }
 
-        // 14. Success response
+        // 14. Broadcast GAME_STARTED event
+        const channel = supabase.channel(`room:${room_id}`);
+        await channel.send({
+            type: "broadcast",
+            event: "game_event",
+            payload: {
+                type: "GAME_STARTED",
+                room_id: room_id,
+                starter_player_id: starterPlayerId,
+                active_suit: "spades",
+                timestamp: Date.now(),
+            },
+        });
+
+        // 15. Success response
         return new Response(
             JSON.stringify({
                 success: true,

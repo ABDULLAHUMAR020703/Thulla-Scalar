@@ -3,6 +3,7 @@
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/services/supabase";
 import { GameEvent, GameEventType, createEvent } from "./events";
+import { getRoomChannelName } from "@/services/gameBroadcast";
 
 // ================================
 // TYPES
@@ -77,7 +78,10 @@ export class RealtimeGameClient {
 
         try {
             // Create broadcast channel for the room
-            this.channel = supabase.channel(`game:${this.roomId}`, {
+            const channelName = getRoomChannelName(this.roomId);
+            console.log(`[Realtime] Connecting to channel: ${channelName}`);
+
+            this.channel = supabase.channel(channelName, {
                 config: {
                     broadcast: { self: true }, // Receive own broadcasts
                 },

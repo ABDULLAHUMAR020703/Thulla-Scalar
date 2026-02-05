@@ -1,8 +1,14 @@
+/**
+ * Game Start Logic
+ * 
+ * Pure logic for game start. No direct database writes.
+ * All mutations go through Edge Functions via gameActions.ts.
+ */
+
 import { Card, Suit, Rank } from "@/context/GameProvider";
-import { supabase } from "@/services/supabase";
 
 // ================================
-// ACE OF SPADES GAME START LOGIC
+// ACE OF SPADES GAME START LOGIC (Pure)
 // ================================
 
 /**
@@ -47,87 +53,7 @@ export function validateFirstMove(card: Card, isFirstTrick: boolean): boolean {
 }
 
 // ================================
-// SUPABASE GAME START LOGIC
-// ================================
-
-interface HandRecord {
-    player_id: string;
-    card_suit: Suit;
-    card_rank: Rank;
-}
-
-/**
- * Find Ace of Spades holder from Supabase hands table
- * Returns the player_id who holds Ace of Spades
- */
-export async function findAceOfSpadesHolderFromDB(
-    roomId: string
-): Promise<string | null> {
-    const { data, error } = await supabase
-        .from("hands")
-        .select("player_id")
-        .eq("room_id", roomId)
-        .eq("card_suit", "spades")
-        .eq("card_rank", "A")
-        .single();
-
-    if (error) {
-        console.error("[GameStart] Failed to find Ace of Spades holder:", error);
-        return null;
-    }
-
-    return data?.player_id ?? null;
-}
-
-/**
- * Set the starting player for the room (Ace of Spades holder)
- * Also sets active_suit to 'spades'
- */
-export async function setGameStartPlayer(roomId: string): Promise<{
-    success: boolean;
-    startingPlayerId: string | null;
-    error?: string;
-}> {
-    // 1. Find who holds Ace of Spades
-    const startingPlayerId = await findAceOfSpadesHolderFromDB(roomId);
-
-    if (!startingPlayerId) {
-        return {
-            success: false,
-            startingPlayerId: null,
-            error: "Could not find Ace of Spades holder",
-        };
-    }
-
-    // 2. Update room with starting player and active suit
-    const { error } = await supabase
-        .from("rooms")
-        .update({
-            current_turn_player_id: startingPlayerId,
-            active_suit: "spades",
-            status: "playing",
-        })
-        .eq("id", roomId);
-
-    if (error) {
-        console.error("[GameStart] Failed to set starting player:", error);
-        return {
-            success: false,
-            startingPlayerId: null,
-            error: error.message,
-        };
-    }
-
-    console.log(`[GameStart] Room ${roomId} started by player ${startingPlayerId}`);
-
-    return {
-        success: true,
-        startingPlayerId,
-    };
-}
-
-// ================================
-// TURN ORDER (CLOCKWISE)
+// TURN ORDER (CLOCKWISE) - Pure Logic
 // ================================
 
 export interface PlayerWithPosition {

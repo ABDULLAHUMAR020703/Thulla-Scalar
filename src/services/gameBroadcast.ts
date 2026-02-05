@@ -44,12 +44,29 @@ export interface PilePickedEvent {
     card_count: number;
 }
 
+export interface GameStartedEvent {
+    type: "GAME_STARTED";
+    room_id: string;
+    starter_player_id: string;
+    active_suit: "spades"; // Initial active suit is always spades
+    timestamp: number;
+}
+
 export type GameEvent =
+    | GameStartedEvent
     | TurnChangedEvent
     | CardPlayedEvent
     | ThullaTriggeredEvent
     | TrickClearedEvent
     | PilePickedEvent;
+
+// ================================
+// CHANNEL HELPERS
+// ================================
+
+export function getRoomChannelName(roomId: string): string {
+    return `room:${roomId}`;
+}
 
 // ================================
 // BROADCAST HANDLER (Server-side calls this)
@@ -64,7 +81,8 @@ export async function broadcastGameEvent(
     event: GameEvent
 ): Promise<{ success: boolean; error?: string }> {
     try {
-        const channel = supabase.channel(`room:${roomId}`);
+        const channelName = getRoomChannelName(roomId);
+        const channel = supabase.channel(channelName);
 
         await channel.send({
             type: "broadcast",

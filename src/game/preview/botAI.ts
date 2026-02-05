@@ -180,6 +180,8 @@ export function createBotPlayers(
         isHost: false,
         isBot: true as const,
         difficulty,
+        position: i + 1,
+        is_active: true,
     }));
 }
 

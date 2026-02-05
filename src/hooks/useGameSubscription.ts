@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useRef, useState } from "react";
 import { supabase } from "@/services/supabase";
-import { GameEvent, GameEventType } from "@/services/gameBroadcast";
+import { GameEvent, GameEventType, getRoomChannelName } from "@/services/gameBroadcast";
 
 // ================================
 // TYPES
@@ -89,7 +89,8 @@ export function useGameSubscription(options: UseGameSubscriptionOptions) {
             return;
         }
 
-        const channel = supabase.channel(`room:${roomId}`);
+        const channelName = getRoomChannelName(roomId);
+        const channel = supabase.channel(channelName);
         channelRef.current = channel;
 
         channel

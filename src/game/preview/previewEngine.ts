@@ -151,6 +151,8 @@ export function usePreviewEngine() {
             score: 0,
             isReady: true,
             isHost: true,
+            position: 0,
+            is_active: true,
         };
 
         // Create bot players
