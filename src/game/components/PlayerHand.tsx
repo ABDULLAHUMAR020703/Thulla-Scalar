@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
+import { motion, useMotionValue, PanInfo } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import { Card, Suit } from "@/context/GameProvider";
 import PlayingCard from "./PlayingCard";
@@ -45,15 +45,15 @@ export default function PlayerHand({
         return () => window.removeEventListener("resize", updateWidth);
     }, []);
 
-    // Card layout calculations
+    // Card layout calculations - mobile optimized
     const cardWidth = 65;
     const cardHeight = 95;
     const maxCards = cards.length;
 
-    // Fan curve parameters
-    const maxRotation = 25; // Max rotation at edges (degrees)
-    const maxLift = 20; // Max vertical lift at edges (pixels)
-    const overlapPercent = maxCards > 7 ? 0.55 : 0.45; // More overlap with more cards
+    // Fan curve parameters - less aggressive on mobile
+    const maxRotation = maxCards > 5 ? 20 : 15;
+    const maxLift = 15;
+    const overlapPercent = maxCards > 7 ? 0.5 : maxCards > 5 ? 0.4 : 0.35;
 
     const effectiveCardWidth = cardWidth * (1 - overlapPercent);
     const totalWidth = cardWidth + (maxCards - 1) * effectiveCardWidth;
@@ -67,13 +67,12 @@ export default function PlayerHand({
         const velocity = info.velocity.x;
         const offset = info.offset.x;
 
-        // Apply momentum
         const targetX = scrollX.get() + offset + velocity * 0.2;
         const clampedX = Math.max(minScroll, Math.min(maxScroll, targetX));
         scrollX.set(clampedX);
     };
 
-    const handleCardClick = (card: Card, index: number) => {
+    const handleCardClick = (card: Card) => {
         // Spectators cannot play cards
         if (isSpectator) return;
         const canPlay = isCurrentPlayer && isCardPlayable(card, cards, leadSuit);
@@ -93,22 +92,39 @@ export default function PlayerHand({
     return (
         <div
             ref={containerRef}
-            className={`relative w-full max-w-[360px] mx-auto transition-opacity duration-300 ${isSpectator ? 'opacity-60' : ''}`}
-            style={{ height: cardHeight + maxLift + 20 }}
+            className={`relative w-full max-w-[400px] mx-auto transition-opacity duration-300 ${isSpectator ? 'opacity-50' : ''}`}
+            style={{ height: cardHeight + maxLift + 30 }}
         >
+            {/* Hand area background glow */}
+            {isCurrentPlayer && !isSpectator && (
+                <div
+                    className="absolute inset-x-0 bottom-0 h-24 pointer-events-none opacity-30"
+                    style={{
+                        background: "radial-gradient(ellipse at center bottom, rgba(0,229,255,0.15) 0%, transparent 70%)",
+                    }}
+                />
+            )}
+
             {/* Scroll indicator (left) */}
             {needsScroll && (
                 <motion.div
                     className="absolute left-0 top-1/2 -translate-y-1/2 z-20 pointer-events-none"
-                    style={{ opacity: scrollX.get() < -10 ? 0 : 1 }}
+                    style={{ opacity: scrollX.get() < -10 ? 0 : 0.6 }}
                 >
-                    <div className="w-8 h-full bg-gradient-to-r from-[#0B0F1A] to-transparent" />
+                    <div className="w-6 h-16 bg-gradient-to-r from-[#0B0F1A] to-transparent rounded-r-lg" />
                 </motion.div>
+            )}
+
+            {/* Scroll indicator (right) */}
+            {needsScroll && (
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 z-20 pointer-events-none opacity-60">
+                    <div className="w-6 h-16 bg-gradient-to-l from-[#0B0F1A] to-transparent rounded-l-lg" />
+                </div>
             )}
 
             {/* Cards container */}
             <motion.div
-                className="relative flex items-end justify-center cursor-grab active:cursor-grabbing"
+                className="relative flex items-end justify-center touch-pan-x"
                 style={{
                     x: scrollX,
                     width: needsScroll ? totalWidth + 40 : "100%",
@@ -152,9 +168,9 @@ export default function PlayerHand({
                             }}
                             animate={{
                                 rotate: isSelected ? 0 : rotation,
-                                y: isSelected ? -yOffset - 10 : -yOffset,
+                                y: isSelected ? -yOffset - 16 : -yOffset,
                             }}
-                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                            transition={{ type: "spring", stiffness: 350, damping: 25 }}
                         >
                             <PlayingCard
                                 card={card}
@@ -165,7 +181,7 @@ export default function PlayerHand({
                                 isSenior={isSenior}
                                 isFaceUp={isCurrentPlayer}
                                 isDraggable={isCurrentPlayer && canPlay}
-                                onClick={() => handleCardClick(card, index)}
+                                onClick={() => handleCardClick(card)}
                                 size="md"
                             />
                         </motion.div>
@@ -177,10 +193,10 @@ export default function PlayerHand({
             <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-2 right-0 px-2 py-1 rounded-full bg-[#0B0F1A] border border-[#00E5FF]/30 shadow-lg"
+                className="absolute -top-1 right-2 px-2 py-0.5 rounded-full bg-[#0d2e1c]/90 border border-[#c9a227]/40 shadow-lg z-30"
             >
                 <span className="text-xs font-bold text-[#00E5FF]">{cards.length}</span>
-                <span className="text-xs text-[#607D8B] ml-1">cards</span>
+                <span className="text-[10px] text-[#B0BEC5] ml-1">cards</span>
             </motion.div>
         </div>
     );

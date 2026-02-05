@@ -3,6 +3,7 @@
 import { createContext, useContext, useReducer, useEffect, ReactNode, useCallback } from "react";
 import { supabase } from "@/services/supabase";
 import { useGameSubscription } from "@/hooks/useGameSubscription";
+import { useGameAudio } from "@/hooks/useGameAudio";
 import { gameReducer, createInitialGameState, GameEngineState, GameAction } from "@/game/engine/gameEngine";
 import { GameEvent } from "@/services/gameBroadcast";
 
@@ -48,6 +49,9 @@ interface GameContextType {
     resetGame: () => void;
     setGameState: (state: GameState) => void;
     startMultiplayerGame: (roomId: string) => void;
+    // Audio controls
+    isMuted: boolean;
+    toggleMute: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -69,12 +73,21 @@ export function GameProvider({ children, initialRoomId }: GameProviderProps) {
         createInitialGameState
     );
 
-    // 2. SUBSCRIPTION (Multiplayer Events)
+    // TODO: Get actual myPlayerId from auth context
+    const myPlayerId: string | null = null; // Placeholder - should come from auth
+
+    // 2. AUDIO SYSTEM
+    const gameAudio = useGameAudio({ myPlayerId });
+
+    // 3. SUBSCRIPTION (Multiplayer Events)
     const handleGameEvent = useCallback((event: GameEvent) => {
         console.log("[GameProvider] Received Event:", event);
 
         switch (event.type) {
             case "CARD_PLAYED":
+                // Play card sound
+                gameAudio.onCardPlayed();
+
                 // Synthesize Card with ID
                 const playedCard = {
                     id: `card-${event.card.suit}-${event.card.rank}`,
@@ -92,17 +105,21 @@ export function GameProvider({ children, initialRoomId }: GameProviderProps) {
             case "TURN_CHANGED":
             case "TRICK_CLEARED":
             case "THULLA_TRIGGERED":
-                // These events are currently implicit in local reducer's PLAY_CARD logic.
-                // For now, trusting PLAY_CARD sequence is enough for visualization.
+                // THULLA_TRIGGERED audio is handled by useThullaEffects
                 break;
 
             case "GAME_STARTED":
-                // Handle game start - fetch full state from server
+                // Play card deal sound
+                gameAudio.onGameStarted(gameState.roomId || "local");
                 break;
 
             case "PLAYER_FINISHED":
                 // Player has emptied their hand and is out of turn rotation
                 console.log(`[GameProvider] Player ${event.player_id} finished (position ${event.position})`);
+
+                // Play win sound if it's the local player
+                gameAudio.onPlayerFinished(event.player_id);
+
                 dispatch({
                     type: "MARK_PLAYER_FINISHED",
                     playerId: event.player_id
@@ -112,10 +129,16 @@ export function GameProvider({ children, initialRoomId }: GameProviderProps) {
             case "GAME_ENDED":
                 // Game is over - one player remains with cards (the loser)
                 console.log(`[GameProvider] Game ended! Loser: ${event.loser_player_id}`);
+
+                // Play lose sound if local player is the loser
+                if (event.loser_player_id) {
+                    gameAudio.onGameEnded(event.loser_player_id);
+                }
+
                 dispatch({ type: "END_GAME" });
                 break;
         }
-    }, []);
+    }, [gameAudio, gameState.roomId]);
 
     // Active connection only if roomId is present (and not "local" placeholder)
     useGameSubscription({
@@ -124,15 +147,13 @@ export function GameProvider({ children, initialRoomId }: GameProviderProps) {
         enabled: !!(gameState.roomId && gameState.roomId !== "local")
     });
 
-    // 3. DERIVED STATE
+    // 4. DERIVED STATE
     const currentPlayer = gameState.players.find(p => p.id === gameState.currentPlayerId) || null;
-    // TODO: Get actual myPlayerId from auth context
-    const myPlayerId: string | null = null; // Placeholder - should come from auth
     const myPlayer = myPlayerId ? gameState.players.find(p => p.id === myPlayerId) : null;
     const isMyTurn = myPlayerId ? currentPlayer?.id === myPlayerId : false;
     const isSpectator = myPlayer?.finished ?? false;
 
-    // 4. ACTIONS
+    // 5. ACTIONS
     const playCard = async (card: Card) => {
         if (!currentPlayer) return;
 
@@ -155,6 +176,8 @@ export function GameProvider({ children, initialRoomId }: GameProviderProps) {
                 console.error("Play card exception:", err);
             }
         } else {
+            // Local play - also trigger sound
+            gameAudio.onCardPlayed();
             dispatch({ type: "PLAY_CARD", playerId: currentPlayer.id, card });
         }
     };
@@ -164,6 +187,7 @@ export function GameProvider({ children, initialRoomId }: GameProviderProps) {
     };
 
     const resetGame = () => {
+        gameAudio.reset();
         dispatch({ type: "END_GAME" });
     };
 
@@ -179,7 +203,10 @@ export function GameProvider({ children, initialRoomId }: GameProviderProps) {
                 playCard,
                 drawCard,
                 resetGame,
-                startMultiplayerGame: (id) => {/* handle */ }
+                startMultiplayerGame: (id) => {/* handle */ },
+                // Audio controls
+                isMuted: gameAudio.isMuted,
+                toggleMute: gameAudio.toggleMute,
             }}
         >
             {children}

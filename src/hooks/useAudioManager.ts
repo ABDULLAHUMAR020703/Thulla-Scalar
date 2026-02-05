@@ -10,14 +10,20 @@ export const AUDIO_PATHS = {
     thulla: "/audio/thulla.mp3",
     cardPlay: "/audio/card-play.mp3",
     cardDeal: "/audio/card-deal.mp3",
-    trickWin: "/audio/trick-win.mp3",
-    gameStart: "/audio/game-start.mp3",
-    gameWin: "/audio/game-win.mp3",
-    gameLose: "/audio/game-lose.mp3",
-    buttonClick: "/audio/button-click.mp3",
+    win: "/audio/win.mp3",
+    lose: "/audio/lose.mp3",
 } as const;
 
 export type AudioId = keyof typeof AUDIO_PATHS;
+
+// Volume levels per sound (0-1)
+export const AUDIO_VOLUMES: Record<AudioId, number> = {
+    thulla: 0.8,
+    cardPlay: 0.5,
+    cardDeal: 0.6,
+    win: 0.7,
+    lose: 0.7,
+};
 
 // ================================
 // AUDIO MANAGER HOOK (PERSISTENT)
@@ -40,7 +46,7 @@ export interface UseAudioManagerOptions {
 export function useAudioManager(options: UseAudioManagerOptions = {}) {
     const {
         preload = ["thulla"],
-        volume = 0.7,
+        volume = 1.0,
         enabled = true
     } = options;
 
@@ -51,9 +57,10 @@ export function useAudioManager(options: UseAudioManagerOptions = {}) {
 
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
 
     const lastPlayTimeRef = useRef<Map<AudioId, number>>(new Map());
-    const DEBOUNCE_MS = 100;
+    const DEBOUNCE_MS = 80;
 
     // ================================
     // CREATE AUDIO INSTANCE (ONCE)
@@ -69,7 +76,7 @@ export function useAudioManager(options: UseAudioManagerOptions = {}) {
         try {
             const audio = new Audio();
             audio.preload = "auto";
-            audio.volume = volume;
+            audio.volume = AUDIO_VOLUMES[audioId] * volume;
             audio.src = AUDIO_PATHS[audioId];
 
             audioCacheRef.current.set(audioId, audio);
@@ -184,7 +191,7 @@ export function useAudioManager(options: UseAudioManagerOptions = {}) {
     // ================================
 
     const play = useCallback(async (audioId: AudioId): Promise<boolean> => {
-        if (!enabled) return false;
+        if (!enabled || isMuted) return false;
 
         // Debounce
         const now = Date.now();
@@ -204,13 +211,13 @@ export function useAudioManager(options: UseAudioManagerOptions = {}) {
         try {
             // Reset to start for instant replay
             audio.currentTime = 0;
-            audio.volume = volume;
+            audio.volume = AUDIO_VOLUMES[audioId] * volume;
 
             await audio.play();
             console.log(`[Audio] Playing: ${audioId}`);
             return true;
         } catch (error) {
-            console.error(`[Audio] Play error: ${audioId}`, error);
+            console.warn(`[Audio] Play error: ${audioId}`, error);
 
             // Try unlock on first failure
             if (!isUnlockedRef.current) {
@@ -218,7 +225,15 @@ export function useAudioManager(options: UseAudioManagerOptions = {}) {
             }
             return false;
         }
-    }, [enabled, volume, getOrCreateAudio, unlockAudio]);
+    }, [enabled, isMuted, volume, getOrCreateAudio, unlockAudio]);
+
+    // ================================
+    // MUTE TOGGLE
+    // ================================
+
+    const toggleMute = useCallback(() => {
+        setIsMuted(prev => !prev);
+    }, []);
 
     // ================================
     // CONVENIENCE FUNCTIONS
@@ -227,11 +242,8 @@ export function useAudioManager(options: UseAudioManagerOptions = {}) {
     const playThulla = useCallback(() => play("thulla"), [play]);
     const playCardPlay = useCallback(() => play("cardPlay"), [play]);
     const playCardDeal = useCallback(() => play("cardDeal"), [play]);
-    const playTrickWin = useCallback(() => play("trickWin"), [play]);
-    const playGameStart = useCallback(() => play("gameStart"), [play]);
-    const playGameWin = useCallback(() => play("gameWin"), [play]);
-    const playGameLose = useCallback(() => play("gameLose"), [play]);
-    const playButtonClick = useCallback(() => play("buttonClick"), [play]);
+    const playWin = useCallback(() => play("win"), [play]);
+    const playLose = useCallback(() => play("lose"), [play]);
 
     // ================================
     // STOP ALL
@@ -254,8 +266,8 @@ export function useAudioManager(options: UseAudioManagerOptions = {}) {
 
     const setVolume = useCallback((newVolume: number) => {
         const clamped = Math.max(0, Math.min(1, newVolume));
-        audioCacheRef.current.forEach((audio) => {
-            audio.volume = clamped;
+        audioCacheRef.current.forEach((audio, audioId) => {
+            audio.volume = AUDIO_VOLUMES[audioId] * clamped;
         });
     }, []);
 
@@ -263,21 +275,20 @@ export function useAudioManager(options: UseAudioManagerOptions = {}) {
         // State
         isUnlocked,
         isLoaded,
+        isMuted,
 
         // Core functions
         play,
         stopAll,
         setVolume,
         unlockAudio,
+        toggleMute,
 
         // Convenience functions
         playThulla,
         playCardPlay,
         playCardDeal,
-        playTrickWin,
-        playGameStart,
-        playGameWin,
-        playGameLose,
-        playButtonClick,
+        playWin,
+        playLose,
     };
 }
