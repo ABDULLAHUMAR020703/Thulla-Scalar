@@ -182,6 +182,7 @@ export function createBotPlayers(
         difficulty,
         position: i + 1,
         is_active: true,
+        finished: false,
     }));
 }
 

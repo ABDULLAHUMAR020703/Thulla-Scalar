@@ -29,6 +29,7 @@ export interface Player {
     isHost: boolean;
     position: number;
     is_active: boolean;
+    finished: boolean;  // True when player has emptied hand (spectator mode)
 }
 
 export type GameStatus = "waiting" | "playing" | "paused" | "finished";
@@ -40,10 +41,12 @@ interface GameContextType {
     gameState: GameState;
     currentPlayer: Player | null;
     isMyTurn: boolean;
+    isSpectator: boolean;  // True when current player has finished
+    myPlayerId: string | null;
     playCard: (card: Card) => void;
     drawCard: () => void;
     resetGame: () => void;
-    setGameState: (state: GameState) => void; // Kept for compatibility but should avoid
+    setGameState: (state: GameState) => void;
     startMultiplayerGame: (roomId: string) => void;
 }
 
@@ -90,19 +93,26 @@ export function GameProvider({ children, initialRoomId }: GameProviderProps) {
             case "TRICK_CLEARED":
             case "THULLA_TRIGGERED":
                 // These events are currently implicit in local reducer's PLAY_CARD logic.
-                // If we want to support them specifically (e.g. if server logic differs), 
-                // we might need specific actions. 
                 // For now, trusting PLAY_CARD sequence is enough for visualization.
-                // OR we can implement explicit sync actions.
                 break;
 
             case "GAME_STARTED":
-                // Handle game start
-                // We need payload data (players, etc) to START_GAME.
-                // But event payload from start-game might differ from GameAction?
-                // Start-game sends: { type: "GAME_STARTED", room_id, starter_player_id, ... }
-                // We need fetch logic to get players? 
-                // Or we trust the lobby state?
+                // Handle game start - fetch full state from server
+                break;
+
+            case "PLAYER_FINISHED":
+                // Player has emptied their hand and is out of turn rotation
+                console.log(`[GameProvider] Player ${event.player_id} finished (position ${event.position})`);
+                dispatch({
+                    type: "MARK_PLAYER_FINISHED",
+                    playerId: event.player_id
+                } as GameAction);
+                break;
+
+            case "GAME_ENDED":
+                // Game is over - one player remains with cards (the loser)
+                console.log(`[GameProvider] Game ended! Loser: ${event.loser_player_id}`);
+                dispatch({ type: "END_GAME" });
                 break;
         }
     }, []);
@@ -116,28 +126,35 @@ export function GameProvider({ children, initialRoomId }: GameProviderProps) {
 
     // 3. DERIVED STATE
     const currentPlayer = gameState.players.find(p => p.id === gameState.currentPlayerId) || null;
-    const isMyTurn = currentPlayer?.id === gameState.currentPlayerId; // Only valid if we know "me". 
+    // TODO: Get actual myPlayerId from auth context
+    const myPlayerId: string | null = null; // Placeholder - should come from auth
+    const myPlayer = myPlayerId ? gameState.players.find(p => p.id === myPlayerId) : null;
+    const isMyTurn = myPlayerId ? currentPlayer?.id === myPlayerId : false;
+    const isSpectator = myPlayer?.finished ?? false;
 
     // 4. ACTIONS
     const playCard = async (card: Card) => {
         if (!currentPlayer) return;
 
+        // Block spectators from playing
+        if (isSpectator) {
+            console.log("[GameProvider] Cannot play - you are spectating");
+            return;
+        }
+
         // Multiplayer Logic
         if (gameState.roomId && gameState.roomId !== "local") {
             try {
-                // Use gameActions service for Edge Function call
                 const { invokePlayCard } = await import("@/services/gameActions");
                 const result = await invokePlayCard(gameState.roomId, card.suit, card.rank);
 
                 if (!result.success) {
                     console.error("Play card failed:", result.error);
                 }
-                // Do NOT dispatch. Wait for broadcast.
             } catch (err) {
                 console.error("Play card exception:", err);
             }
         } else {
-            // Local Logic
             dispatch({ type: "PLAY_CARD", playerId: currentPlayer.id, card });
         }
     };
@@ -154,9 +171,11 @@ export function GameProvider({ children, initialRoomId }: GameProviderProps) {
         <GameContext.Provider
             value={{
                 gameState,
-                setGameState: () => { }, // No-op
+                setGameState: () => { },
                 currentPlayer,
-                isMyTurn, // This logic is flawed for multiplayer but kept for compilation
+                isMyTurn,
+                isSpectator,
+                myPlayerId,
                 playCard,
                 drawCard,
                 resetGame,

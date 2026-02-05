@@ -15,6 +15,7 @@ export interface TurnPlayer {
     position: number;
     is_active: boolean;
     has_cards: boolean;
+    finished: boolean;  // Player has emptied their hand
 }
 
 // ================================
@@ -29,13 +30,14 @@ export interface TurnPlayer {
  * - Loop back to lowest if at highest
  * - Skip inactive players (is_active = false)
  * - Skip players with no cards (has_cards = false)
+ * - Skip finished players (finished = true)
  */
 export function getNextTurnPlayer(
     players: TurnPlayer[],
     currentPlayerId: string
 ): TurnPlayer | null {
     const eligiblePlayers = players.filter(
-        (p) => p.is_active && p.has_cards
+        (p) => p.is_active && p.has_cards && !p.finished
     );
 
     if (eligiblePlayers.length === 0) {
@@ -86,14 +88,14 @@ export function isPlayerTurn(
  * Validate player is eligible to play
  */
 export function isPlayerEligible(player: TurnPlayer): boolean {
-    return player.is_active && player.has_cards;
+    return player.is_active && player.has_cards && !player.finished;
 }
 
 /**
- * Get all eligible players
+ * Get all eligible players (can still take turns)
  */
 export function getEligiblePlayers(players: TurnPlayer[]): TurnPlayer[] {
-    return players.filter((p) => p.is_active && p.has_cards);
+    return players.filter((p) => p.is_active && p.has_cards && !p.finished);
 }
 
 /**
@@ -101,4 +103,24 @@ export function getEligiblePlayers(players: TurnPlayer[]): TurnPlayer[] {
  */
 export function countEligiblePlayers(players: TurnPlayer[]): number {
     return getEligiblePlayers(players).length;
+}
+
+/**
+ * Check if game should end (only 1 player remaining with cards)
+ */
+export function shouldGameEnd(players: TurnPlayer[]): boolean {
+    const playersWithCards = players.filter(
+        (p) => p.is_active && p.has_cards && !p.finished
+    );
+    return playersWithCards.length <= 1;
+}
+
+/**
+ * Find the loser (last player with cards)
+ */
+export function findLoser(players: TurnPlayer[]): TurnPlayer | null {
+    const playersWithCards = players.filter(
+        (p) => p.is_active && p.has_cards && !p.finished
+    );
+    return playersWithCards.length === 1 ? playersWithCards[0] : null;
 }

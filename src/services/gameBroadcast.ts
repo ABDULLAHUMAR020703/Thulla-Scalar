@@ -52,13 +52,33 @@ export interface GameStartedEvent {
     timestamp: number;
 }
 
+export interface PlayerFinishedEvent {
+    type: "PLAYER_FINISHED";
+    player_id: string;
+    position: number;
+}
+
+export interface GameEndedEvent {
+    type: "GAME_ENDED";
+    loser_player_id: string | null;
+    loser_position: number | null;
+}
+
+export interface FirstTrickResolvedEvent {
+    type: "FIRST_TRICK_RESOLVED";
+    winner_player_id: string;
+}
+
 export type GameEvent =
     | GameStartedEvent
     | TurnChangedEvent
     | CardPlayedEvent
     | ThullaTriggeredEvent
     | TrickClearedEvent
-    | PilePickedEvent;
+    | PilePickedEvent
+    | PlayerFinishedEvent
+    | GameEndedEvent
+    | FirstTrickResolvedEvent;
 
 // ================================
 // CHANNEL HELPERS

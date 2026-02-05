@@ -59,7 +59,8 @@ export type GameAction =
     | { type: "DEAL_CARDS"; hands: Record<string, Card[]> }
     | { type: "CLEAR_ANIMATION"; animation: keyof GameAnimations }
     | { type: "RESET_TRICK" }
-    | { type: "END_GAME" };
+    | { type: "END_GAME" }
+    | { type: "MARK_PLAYER_FINISHED"; playerId: string };
 
 // ================================
 // INITIAL STATE
@@ -303,6 +304,17 @@ export function gameReducer(
             return {
                 ...state,
                 status: "finished",
+            };
+        }
+
+        case "MARK_PLAYER_FINISHED": {
+            const { playerId } = action;
+            const updatedPlayers = state.players.map((p) =>
+                p.id === playerId ? { ...p, finished: true } : p
+            );
+            return {
+                ...state,
+                players: updatedPlayers,
             };
         }
 
