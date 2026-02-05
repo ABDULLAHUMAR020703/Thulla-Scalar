@@ -9,6 +9,7 @@ import { isCardPlayable, isSeniorCard } from "../utils/cardUtils";
 interface PlayerHandProps {
     cards: Card[];
     isCurrentPlayer?: boolean;
+    isSpectator?: boolean;
     selectedCardId?: string | null;
     onCardClick?: (card: Card) => void;
     onCardSelect?: (card: Card | null) => void;
@@ -20,6 +21,7 @@ interface PlayerHandProps {
 export default function PlayerHand({
     cards,
     isCurrentPlayer = false,
+    isSpectator = false,
     selectedCardId = null,
     onCardClick,
     onCardSelect,
@@ -72,6 +74,8 @@ export default function PlayerHand({
     };
 
     const handleCardClick = (card: Card, index: number) => {
+        // Spectators cannot play cards
+        if (isSpectator) return;
         const canPlay = isCurrentPlayer && isCardPlayable(card, cards, leadSuit);
 
         if (!canPlay) return;
@@ -89,7 +93,7 @@ export default function PlayerHand({
     return (
         <div
             ref={containerRef}
-            className="relative w-full max-w-[360px] mx-auto"
+            className={`relative w-full max-w-[360px] mx-auto transition-opacity duration-300 ${isSpectator ? 'opacity-60' : ''}`}
             style={{ height: cardHeight + maxLift + 20 }}
         >
             {/* Scroll indicator (left) */}
@@ -128,8 +132,8 @@ export default function PlayerHand({
                     // Horizontal position
                     const xOffset = index * effectiveCardWidth;
 
-                    // Check if card is playable
-                    const canPlay = isCurrentPlayer && isCardPlayable(card, cards, leadSuit);
+                    // Check if card is playable (spectators can never play)
+                    const canPlay = !isSpectator && isCurrentPlayer && isCardPlayable(card, cards, leadSuit);
 
                     // Check if this is the senior card
                     const isSenior = pile.length > 0 &&
@@ -156,7 +160,7 @@ export default function PlayerHand({
                                 card={card}
                                 index={index}
                                 isPlayable={canPlay}
-                                isDisabled={!canPlay}
+                                isDisabled={!canPlay || isSpectator}
                                 isSelected={isSelected}
                                 isSenior={isSenior}
                                 isFaceUp={isCurrentPlayer}

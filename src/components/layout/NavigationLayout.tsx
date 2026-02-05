@@ -14,8 +14,6 @@ interface NavigationLayoutProps {
 const navItems = [
     { href: "/", icon: "🏠", label: "Home" },
     { href: "/game/lobby", icon: "🎮", label: "Play" },
-    { href: "/profile", icon: "👤", label: "Profile" },
-    { href: "/settings", icon: "⚙️", label: "Settings" },
 ];
 
 export default function NavigationLayout({
@@ -40,31 +38,6 @@ export default function NavigationLayout({
                                 Thulla
                             </span>
                         </Link>
-
-                        <div className="flex items-center gap-2">
-                            {/* Notification */}
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="relative p-2.5 rounded-xl bg-white/[0.06] border border-white/[0.08] hover:border-[#00E5FF]/30 transition-colors"
-                                aria-label="Notifications"
-                            >
-                                <span className="text-lg">🔔</span>
-                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF1744] rounded-full text-[10px] flex items-center justify-center font-bold">
-                                    2
-                                </span>
-                            </motion.button>
-
-                            {/* Profile */}
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7C4DFF] to-[#651FFF] flex items-center justify-center text-white text-sm font-bold shadow-[0_0_15px_rgba(124,77,255,0.3)]"
-                                aria-label="User menu"
-                            >
-                                U
-                            </motion.button>
-                        </div>
                     </div>
                 </header>
             )}
@@ -105,11 +78,10 @@ export default function NavigationLayout({
                                     )}
 
                                     <motion.div
-                                        whileHover={{ scale: 1.1 }}
                                         whileTap={{ scale: 0.95 }}
                                         className={`
                       flex flex-col items-center gap-1 transition-colors duration-200
-                      ${isActive ? "text-[#00E5FF]" : "text-[#607D8B] group-hover:text-[#B0BEC5]"}
+                      ${isActive ? "text-[#00E5FF]" : "text-[#607D8B]"}
                     `}
                                     >
                                         <span className={`text-xl ${isActive ? "drop-shadow-[0_0_8px_rgba(0,229,255,0.6)]" : ""}`}>
@@ -128,3 +100,4 @@ export default function NavigationLayout({
         </div>
     );
 }
+

@@ -7,6 +7,7 @@ import { useGame, Card, Suit } from "@/context/GameProvider";
 import PlayerHand from "./PlayerHand";
 import PlayingCard from "./PlayingCard";
 import CardPile from "./CardPile";
+import SpectatorBadge from "./SpectatorBadge";
 import { getLeadSuit, isCardPlayable } from "../utils/cardUtils";
 
 // Droppable Play Area Component
@@ -53,7 +54,7 @@ function PlayArea({ children, isMyTurn }: { children: React.ReactNode; isMyTurn:
 }
 
 export default function GameBoard() {
-    const { gameState, currentPlayer, isMyTurn, playCard } = useGame();
+    const { gameState, currentPlayer, isMyTurn, isSpectator, playCard } = useGame();
     const [activeCard, setActiveCard] = useState<Card | null>(null);
     const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
@@ -217,6 +218,7 @@ export default function GameBoard() {
                         <PlayerHand
                             cards={currentPlayer.hand}
                             isCurrentPlayer={true}
+                            isSpectator={isSpectator}
                             selectedCardId={selectedCardId}
                             onCardClick={handleCardPlay}
                             onCardSelect={(card) => setSelectedCardId(card?.id ?? null)}
@@ -239,6 +241,9 @@ export default function GameBoard() {
                     />
                 )}
             </DragOverlay>
+
+            {/* Spectator Badge */}
+            {isSpectator && <SpectatorBadge />}
         </DndContext>
     );
 }

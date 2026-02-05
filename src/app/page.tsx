@@ -43,35 +43,12 @@ export default function Home() {
             </p>
           </motion.div>
 
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex items-center gap-6 mb-10"
-          >
-            <div className="text-center">
-              <div className="text-2xl font-bold text-[#00E5FF] neon-text">1.2K</div>
-              <div className="text-xs text-[#607D8B] uppercase tracking-wider">Online</div>
-            </div>
-            <div className="w-px h-8 bg-white/10" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-[#7C4DFF] neon-text-secondary">256</div>
-              <div className="text-xs text-[#607D8B] uppercase tracking-wider">Games</div>
-            </div>
-            <div className="w-px h-8 bg-white/10" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-[#00E676]">Top 5%</div>
-              <div className="text-xs text-[#607D8B] uppercase tracking-wider">Rank</div>
-            </div>
-          </motion.div>
-
           {/* CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col gap-3 w-full max-w-xs"
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-col gap-3 w-full max-w-xs mt-8"
           >
             <Link href="/game/lobby" className="w-full">
               <Button variant="primary" size="lg" fullWidth>
