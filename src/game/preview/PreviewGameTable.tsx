@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, Suit } from "@/context/GameProvider";
 import { PreviewPlayer, TrickCard } from "../preview/gameStateMachine";
+import CardFace from "../components/CardFace";
+import CardBack from "../components/CardBack";
 
 interface PreviewPlayerHandProps {
     player: PreviewPlayer;
@@ -44,24 +46,11 @@ function CardDisplay({ card, isPlayable, onClick, faceDown, small, isSenior }: C
     if (faceDown) {
         // Premium card back design
         return (
-            <div
-                className={`${width} ${height} rounded-lg shadow-lg overflow-hidden`}
-                style={{
-                    background: "linear-gradient(145deg, #1a4d2e 0%, #0d2818 100%)",
-                    border: "2px solid #c9a227",
-                }}
-            >
-                <div className="w-full h-full flex items-center justify-center">
-                    <div
-                        className="w-6 h-8 rounded flex items-center justify-center"
-                        style={{
-                            background: "linear-gradient(135deg, #c9a227 0%, #8b6914 100%)",
-                        }}
-                    >
-                        <span className="text-xs font-bold text-[#0d2818]">T</span>
-                    </div>
-                </div>
-            </div>
+            <CardBack
+                width={small ? 40 : 56}
+                height={small ? 56 : 80}
+                className="rounded-lg shadow-lg"
+            />
         );
     }
 
@@ -69,9 +58,8 @@ function CardDisplay({ card, isPlayable, onClick, faceDown, small, isSenior }: C
         <motion.button
             onClick={onClick}
             disabled={!isPlayable}
-            className={`${width} ${height} rounded-lg shadow-lg flex flex-col items-center justify-center relative overflow-hidden transition-all`}
+            className={`${width} ${height} rounded-lg shadow-lg relative overflow-hidden transition-all select-none`}
             style={{
-                background: "linear-gradient(145deg, #fffef5 0%, #f5f0e1 100%)",
                 border: isPlayable
                     ? "2px solid #c9a227"
                     : isSenior
@@ -84,30 +72,22 @@ function CardDisplay({ card, isPlayable, onClick, faceDown, small, isSenior }: C
                         : "0 2px 8px rgba(0,0,0,0.2)",
                 opacity: isPlayable ? 1 : 0.8,
                 cursor: isPlayable ? "pointer" : "default",
+                background: "linear-gradient(145deg, #FFFEF8 0%, #F5F3E8 50%, #EBE8DC 100%)",
             }}
             whileHover={isPlayable ? { scale: 1.08, y: -8 } : undefined}
             whileTap={isPlayable ? { scale: 0.95 } : undefined}
         >
-            <span
-                className={`font-bold ${small ? "text-xs" : "text-lg"}`}
-                style={{
-                    color: SUIT_COLORS[card.suit],
-                    fontFamily: "Georgia, serif",
-                }}
-            >
-                {card.rank}
-            </span>
-            <span
-                className={small ? "text-sm" : "text-xl"}
-                style={{ color: SUIT_COLORS[card.suit] }}
-            >
-                {SUIT_SYMBOLS[card.suit]}
-            </span>
+            <CardFace
+                rank={card.rank}
+                suit={card.suit}
+                width={small ? 40 : 56} // Approximate pixel values for 'w-10' and 'w-14'
+                height={small ? 56 : 80}
+            />
 
-            {/* Senior card indicator */}
+            {/* Senior card crown indicator (Overlay) */}
             {isSenior && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#ffd700] flex items-center justify-center">
-                    <span className="text-[8px]">👑</span>
+                <div className="absolute -top-1 -right-1 w-5 h-5 z-20 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-lg">
+                    <span className="text-[10px]">👑</span>
                 </div>
             )}
         </motion.button>

@@ -2,7 +2,9 @@
 
 import { motion } from "framer-motion";
 import { useDraggable } from "@dnd-kit/core";
-import { Card as CardType, Suit } from "@/context/GameProvider";
+import { Card as CardType } from "@/context/GameProvider";
+import CardFace from "./CardFace";
+import CardBack from "./CardBack";
 
 interface PlayingCardProps {
     card: CardType;
@@ -17,24 +19,10 @@ interface PlayingCardProps {
     size?: "sm" | "md" | "lg";
 }
 
-const suitSymbols: Record<Suit, string> = {
-    hearts: "♥",
-    diamonds: "♦",
-    clubs: "♣",
-    spades: "♠",
-};
-
-const suitColors: Record<Suit, { main: string; shadow: string }> = {
-    hearts: { main: "#DC2626", shadow: "rgba(220, 38, 38, 0.4)" },
-    diamonds: { main: "#DC2626", shadow: "rgba(220, 38, 38, 0.4)" },
-    clubs: { main: "#1a1a1a", shadow: "rgba(0, 0, 0, 0.3)" },
-    spades: { main: "#1a1a1a", shadow: "rgba(0, 0, 0, 0.3)" },
-};
-
 const sizes = {
-    sm: { width: 50, height: 72, rank: "text-xs", symbol: "text-[10px]", center: "text-2xl" },
-    md: { width: 65, height: 95, rank: "text-sm", symbol: "text-xs", center: "text-3xl" },
-    lg: { width: 80, height: 116, rank: "text-base", symbol: "text-sm", center: "text-4xl" },
+    sm: { width: 50, height: 72 },
+    md: { width: 65, height: 95 },
+    lg: { width: 80, height: 116 },
 };
 
 export default function PlayingCard({
@@ -55,121 +43,21 @@ export default function PlayingCard({
     });
 
     const sizeConfig = sizes[size];
-    const suitColor = suitColors[card.suit];
 
     const style = transform
         ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
         : undefined;
 
-    // Card face content - realistic poker card design
+    // Card face content - using the unified CardFace component
     const cardFace = isFaceUp ? (
-        <div className="relative w-full h-full rounded-lg overflow-hidden"
-            style={{
-                background: "linear-gradient(145deg, #FFFEF8 0%, #F5F3E8 50%, #EBE8DC 100%)",
-                boxShadow: "inset 0 1px 2px rgba(255,255,255,0.8), inset 0 -1px 2px rgba(0,0,0,0.05)",
-            }}
-        >
-            {/* Card texture overlay */}
-            <div
-                className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-                }}
-            />
-
-            {/* Top Left - Rank & Suit */}
-            <div
-                className="absolute top-1 left-1.5 flex flex-col items-center leading-none"
-                style={{ color: suitColor.main }}
-            >
-                <span className={`${sizeConfig.rank} font-bold`} style={{ fontFamily: "Georgia, serif" }}>
-                    {card.rank}
-                </span>
-                <span className={sizeConfig.symbol}>{suitSymbols[card.suit]}</span>
-            </div>
-
-            {/* Center Symbol - Large suit */}
-            <div
-                className="absolute inset-0 flex items-center justify-center"
-                style={{ color: suitColor.main }}
-            >
-                <span
-                    className={`${sizeConfig.center} drop-shadow-sm`}
-                    style={{
-                        textShadow: `0 2px 4px ${suitColor.shadow}`,
-                        fontFamily: "Georgia, serif",
-                    }}
-                >
-                    {suitSymbols[card.suit]}
-                </span>
-            </div>
-
-            {/* Bottom Right - Rank & Suit (Rotated) */}
-            <div
-                className="absolute bottom-1 right-1.5 flex flex-col items-center rotate-180 leading-none"
-                style={{ color: suitColor.main }}
-            >
-                <span className={`${sizeConfig.rank} font-bold`} style={{ fontFamily: "Georgia, serif" }}>
-                    {card.rank}
-                </span>
-                <span className={sizeConfig.symbol}>{suitSymbols[card.suit]}</span>
-            </div>
-
-            {/* Senior card crown indicator */}
-            {isSenior && (
-                <motion.div
-                    initial={{ scale: 0, rotate: -20 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    className="absolute -top-1 -right-1 z-10"
-                >
-                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-lg shadow-yellow-500/50">
-                        <span className="text-[10px]">👑</span>
-                    </div>
-                </motion.div>
-            )}
-        </div>
+        <CardFace
+            rank={card.rank}
+            suit={card.suit}
+            width={sizeConfig.width}
+            height={sizeConfig.height}
+        />
     ) : (
-        // Card back - Premium casino design
-        <div
-            className="relative w-full h-full rounded-lg overflow-hidden"
-            style={{
-                background: "linear-gradient(145deg, #1e3a5f 0%, #0f2744 50%, #0a1929 100%)",
-                boxShadow: "inset 0 1px 2px rgba(255,255,255,0.1)",
-            }}
-        >
-            {/* Decorative border */}
-            <div className="absolute inset-1.5 border border-[#3d5a80]/40 rounded-md" />
-
-            {/* Diamond pattern */}
-            <div className="absolute inset-2 opacity-20">
-                <div
-                    className="w-full h-full"
-                    style={{
-                        backgroundImage: `repeating-linear-gradient(
-                            45deg,
-                            transparent,
-                            transparent 4px,
-                            rgba(61, 90, 128, 0.3) 4px,
-                            rgba(61, 90, 128, 0.3) 5px
-                        ),
-                        repeating-linear-gradient(
-                            -45deg,
-                            transparent,
-                            transparent 4px,
-                            rgba(61, 90, 128, 0.3) 4px,
-                            rgba(61, 90, 128, 0.3) 5px
-                        )`,
-                    }}
-                />
-            </div>
-
-            {/* Center emblem */}
-            <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#c9a227]/30 to-[#8b6914]/30 border border-[#c9a227]/40 flex items-center justify-center">
-                    <span className="text-[#c9a227] text-sm font-bold" style={{ fontFamily: "Georgia, serif" }}>T</span>
-                </div>
-            </div>
-        </div>
+        <CardBack />
     );
 
     return (
@@ -237,11 +125,14 @@ export default function PlayingCard({
                 />
             )}
 
-            {/* Card content with border */}
+            {/* Card container with paper background for front face */}
             <div
                 className="relative w-full h-full rounded-lg overflow-hidden"
                 style={{
                     border: "1px solid rgba(0,0,0,0.15)",
+                    background: isFaceUp
+                        ? "linear-gradient(145deg, #FFFEF8 0%, #F5F3E8 50%, #EBE8DC 100%)"
+                        : "transparent"
                 }}
             >
                 {cardFace}
