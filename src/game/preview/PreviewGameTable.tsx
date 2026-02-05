@@ -18,6 +18,7 @@ interface CardDisplayProps {
     onClick?: () => void;
     faceDown?: boolean;
     small?: boolean;
+    isSenior?: boolean;
 }
 
 // Suit symbols and colors
@@ -29,23 +30,36 @@ const SUIT_SYMBOLS: Record<Suit, string> = {
 };
 
 const SUIT_COLORS: Record<Suit, string> = {
-    hearts: "text-[#FF1744]",
-    diamonds: "text-[#FF1744]",
-    clubs: "text-[#1a1a1a]",
-    spades: "text-[#1a1a1a]",
+    hearts: "#dc2626",
+    diamonds: "#dc2626",
+    clubs: "#1a1a1a",
+    spades: "#1a1a1a",
 };
 
-// Card Display Component
-function CardDisplay({ card, isPlayable, onClick, faceDown, small }: CardDisplayProps) {
-    const sizeClasses = small
-        ? "w-10 h-14 text-xs"
-        : "w-14 h-20 sm:w-16 sm:h-24 text-sm";
+// Casino-style Card Display Component
+function CardDisplay({ card, isPlayable, onClick, faceDown, small, isSenior }: CardDisplayProps) {
+    const width = small ? "w-10" : "w-14 sm:w-16";
+    const height = small ? "h-14" : "h-20 sm:h-24";
 
     if (faceDown) {
+        // Premium card back design
         return (
-            <div className={`${sizeClasses} rounded-lg bg-gradient-to-br from-[#1a237e] to-[#0d47a1] border border-white/20 shadow-lg`}>
+            <div
+                className={`${width} ${height} rounded-lg shadow-lg overflow-hidden`}
+                style={{
+                    background: "linear-gradient(145deg, #1a4d2e 0%, #0d2818 100%)",
+                    border: "2px solid #c9a227",
+                }}
+            >
                 <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-6 h-8 rounded border border-white/30 bg-white/10" />
+                    <div
+                        className="w-6 h-8 rounded flex items-center justify-center"
+                        style={{
+                            background: "linear-gradient(135deg, #c9a227 0%, #8b6914 100%)",
+                        }}
+                    >
+                        <span className="text-xs font-bold text-[#0d2818]">T</span>
+                    </div>
                 </div>
             </div>
         );
@@ -55,24 +69,52 @@ function CardDisplay({ card, isPlayable, onClick, faceDown, small }: CardDisplay
         <motion.button
             onClick={onClick}
             disabled={!isPlayable}
-            className={`${sizeClasses} rounded-lg bg-white shadow-lg border-2 flex flex-col items-center justify-center relative overflow-hidden transition-all ${isPlayable
-                ? "border-[#00E5FF] cursor-pointer hover:shadow-[0_0_20px_rgba(0,229,255,0.5)] hover:-translate-y-2"
-                : "border-gray-300 opacity-70 cursor-not-allowed"
-                }`}
-            whileHover={isPlayable ? { scale: 1.05 } : undefined}
+            className={`${width} ${height} rounded-lg shadow-lg flex flex-col items-center justify-center relative overflow-hidden transition-all`}
+            style={{
+                background: "linear-gradient(145deg, #fffef5 0%, #f5f0e1 100%)",
+                border: isPlayable
+                    ? "2px solid #c9a227"
+                    : isSenior
+                        ? "2px solid #ffd700"
+                        : "2px solid #d4c9a8",
+                boxShadow: isPlayable
+                    ? "0 4px 20px rgba(201, 162, 39, 0.4)"
+                    : isSenior
+                        ? "0 0 15px rgba(255, 215, 0, 0.6)"
+                        : "0 2px 8px rgba(0,0,0,0.2)",
+                opacity: isPlayable ? 1 : 0.8,
+                cursor: isPlayable ? "pointer" : "default",
+            }}
+            whileHover={isPlayable ? { scale: 1.08, y: -8 } : undefined}
             whileTap={isPlayable ? { scale: 0.95 } : undefined}
         >
-            <span className={`font-bold ${small ? "text-xs" : "text-lg"} ${SUIT_COLORS[card.suit]}`}>
+            <span
+                className={`font-bold ${small ? "text-xs" : "text-lg"}`}
+                style={{
+                    color: SUIT_COLORS[card.suit],
+                    fontFamily: "Georgia, serif",
+                }}
+            >
                 {card.rank}
             </span>
-            <span className={`${small ? "text-sm" : "text-xl"} ${SUIT_COLORS[card.suit]}`}>
+            <span
+                className={small ? "text-sm" : "text-xl"}
+                style={{ color: SUIT_COLORS[card.suit] }}
+            >
                 {SUIT_SYMBOLS[card.suit]}
             </span>
+
+            {/* Senior card indicator */}
+            {isSenior && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#ffd700] flex items-center justify-center">
+                    <span className="text-[8px]">👑</span>
+                </div>
+            )}
         </motion.button>
     );
 }
 
-// Human Player Hand (Bottom)
+// Human Player Hand (Bottom) - Casino style
 export function PreviewPlayerHand({
     player,
     isCurrentPlayer,
@@ -86,28 +128,42 @@ export function PreviewPlayerHand({
         <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className={`fixed bottom-0 left-0 right-0 z-50 p-4 ${isCurrentPlayer ? "bg-[#00E5FF]/10" : "bg-[#0B0F1A]/90"
-                } backdrop-blur-xl border-t border-white/10`}
+            className="fixed bottom-0 left-0 right-0 z-50 p-4 backdrop-blur-xl"
+            style={{
+                background: isCurrentPlayer
+                    ? "linear-gradient(180deg, rgba(26, 92, 53, 0.6) 0%, rgba(13, 41, 24, 0.9) 100%)"
+                    : "linear-gradient(180deg, rgba(13, 25, 18, 0.6) 0%, rgba(10, 15, 12, 0.95) 100%)",
+                borderTop: isCurrentPlayer
+                    ? "2px solid rgba(201, 162, 39, 0.6)"
+                    : "1px solid rgba(201, 162, 39, 0.2)",
+            }}
         >
+            {/* Your Turn Indicator */}
             {isCurrentPlayer && (
                 <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="absolute -top-8 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[#00E5FF] text-[#0B0F1A] text-sm font-bold"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute -top-10 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full font-bold text-sm"
+                    style={{
+                        background: "linear-gradient(135deg, #c9a227 0%, #f5d67a 50%, #c9a227 100%)",
+                        color: "#0d2818",
+                        boxShadow: "0 4px 20px rgba(201, 162, 39, 0.5)",
+                    }}
                 >
                     Your Turn!
                 </motion.div>
             )}
 
+            {/* Cards */}
             <div className="flex justify-center gap-1 sm:gap-2 overflow-x-auto pb-2">
                 <AnimatePresence>
                     {player.hand.map((card, index) => (
                         <motion.div
                             key={card.id}
                             initial={{ y: 50, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1, transition: { delay: index * 0.05 } }}
+                            animate={{ y: 0, opacity: 1, transition: { delay: index * 0.03 } }}
                             exit={{ y: -100, opacity: 0 }}
-                            style={{ marginLeft: index > 0 ? -20 : 0 }}
+                            style={{ marginLeft: index > 0 ? -16 : 0 }}
                         >
                             <CardDisplay
                                 card={card}
@@ -119,14 +175,14 @@ export function PreviewPlayerHand({
                 </AnimatePresence>
             </div>
 
-            <div className="text-center mt-2 text-sm text-[#607D8B]">
+            <div className="text-center mt-2 text-xs" style={{ color: "#8fae94" }}>
                 {player.hand.length} cards
             </div>
         </motion.div>
     );
 }
 
-// Bot Player Display
+// Bot Player Display - Casino style
 interface BotPlayerDisplayProps {
     player: PreviewPlayer;
     position: "top" | "left" | "right";
@@ -135,9 +191,9 @@ interface BotPlayerDisplayProps {
 
 export function BotPlayerDisplay({ player, position, isCurrentPlayer }: BotPlayerDisplayProps) {
     const positionClasses = {
-        top: "fixed top-20 left-1/2 -translate-x-1/2",
-        left: "fixed left-4 top-1/2 -translate-y-1/2",
-        right: "fixed right-4 top-1/2 -translate-y-1/2",
+        top: "fixed top-16 left-1/2 -translate-x-1/2",
+        left: "fixed left-3 top-1/2 -translate-y-1/2",
+        right: "fixed right-3 top-1/2 -translate-y-1/2",
     };
 
     const cardLayout = position === "top" ? "flex-row" : "flex-col";
@@ -148,56 +204,73 @@ export function BotPlayerDisplay({ player, position, isCurrentPlayer }: BotPlaye
             animate={{ opacity: 1 }}
             className={`${positionClasses[position]} z-40`}
         >
-            <div className={`p-3 rounded-xl ${isCurrentPlayer
-                ? "bg-[#00E5FF]/20 border-2 border-[#00E5FF]"
-                : "bg-white/[0.04] border border-white/10"
-                } backdrop-blur-xl`}>
+            <div
+                className="p-3 rounded-xl backdrop-blur-xl"
+                style={{
+                    background: isCurrentPlayer
+                        ? "rgba(26, 92, 53, 0.6)"
+                        : "rgba(13, 25, 18, 0.6)",
+                    border: isCurrentPlayer
+                        ? "2px solid #c9a227"
+                        : "1px solid rgba(201, 162, 39, 0.3)",
+                    boxShadow: isCurrentPlayer
+                        ? "0 0 20px rgba(201, 162, 39, 0.3)"
+                        : "none",
+                }}
+            >
                 {/* Player info */}
                 <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xl">{player.avatar}</span>
-                    <span className={`text-sm font-semibold ${player.hasFinished ? "text-[#00E676]" : "text-white"
-                        }`}>
+                    <span className="text-lg">{player.avatar}</span>
+                    <span
+                        className="text-xs sm:text-sm font-semibold"
+                        style={{ color: player.hasFinished ? "#4ade80" : "#f5d67a" }}
+                    >
                         {player.name}
                     </span>
                     {isCurrentPlayer && (
                         <motion.span
                             animate={{ scale: [1, 1.2, 1] }}
                             transition={{ duration: 1, repeat: Infinity }}
-                            className="text-xs text-[#00E5FF]"
+                            className="text-xs"
                         >
                             🎯
                         </motion.span>
+                    )}
+                    {player.hasFinished && (
+                        <span className="text-xs">✓</span>
                     )}
                 </div>
 
                 {/* Cards (face down) */}
                 <div className={`flex ${cardLayout} gap-0.5`}>
-                    {player.hand.slice(0, Math.min(player.hand.length, 6)).map((_, i) => (
+                    {player.hand.slice(0, Math.min(player.hand.length, 5)).map((_, i) => (
                         <div
                             key={i}
-                            className="w-6 h-9 rounded bg-gradient-to-br from-[#1a237e] to-[#0d47a1] border border-white/20"
+                            className="w-5 h-7 rounded"
                             style={{
-                                marginLeft: position === "top" && i > 0 ? -12 : 0,
-                                marginTop: position !== "top" && i > 0 ? -20 : 0,
+                                background: "linear-gradient(145deg, #1a4d2e 0%, #0d2818 100%)",
+                                border: "1px solid rgba(201, 162, 39, 0.4)",
+                                marginLeft: position === "top" && i > 0 ? -10 : 0,
+                                marginTop: position !== "top" && i > 0 ? -18 : 0,
                             }}
                         />
                     ))}
-                    {player.hand.length > 6 && (
-                        <span className="text-xs text-[#607D8B] ml-1">
-                            +{player.hand.length - 6}
+                    {player.hand.length > 5 && (
+                        <span className="text-xs ml-1" style={{ color: "#8fae94" }}>
+                            +{player.hand.length - 5}
                         </span>
                     )}
                 </div>
 
-                <div className="text-center mt-1 text-xs text-[#607D8B]">
-                    {player.hand.length} cards
+                <div className="text-center mt-1 text-xs" style={{ color: "#8fae94" }}>
+                    {player.hand.length}
                 </div>
             </div>
         </motion.div>
     );
 }
 
-// Center Pile Display
+// Center Pile Display - Casino style
 interface CenterPileProps {
     trick: TrickCard[];
     activeSuit: Suit | null;
@@ -212,9 +285,16 @@ export function CenterPile({ trick, activeSuit, seniorCardId }: CenterPileProps)
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="absolute -top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/[0.1] border border-white/20 backdrop-blur-xl"
+                    className="absolute -top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full backdrop-blur-xl"
+                    style={{
+                        background: "rgba(26, 77, 46, 0.8)",
+                        border: "1px solid rgba(201, 162, 39, 0.4)",
+                    }}
                 >
-                    <span className={`text-2xl ${SUIT_COLORS[activeSuit]}`}>
+                    <span
+                        className="text-2xl"
+                        style={{ color: SUIT_COLORS[activeSuit] === "#dc2626" ? "#dc2626" : "#f5d67a" }}
+                    >
                         {SUIT_SYMBOLS[activeSuit]}
                     </span>
                 </motion.div>
@@ -233,7 +313,7 @@ export function CenterPile({ trick, activeSuit, seniorCardId }: CenterPileProps)
                         return (
                             <motion.div
                                 key={trickCard.card.id}
-                                initial={{ scale: 0, rotate: -180 }}
+                                initial={{ scale: 0, rotate: -180, y: 150 }}
                                 animate={{
                                     scale: 1,
                                     rotate: angle / 4,
@@ -241,20 +321,21 @@ export function CenterPile({ trick, activeSuit, seniorCardId }: CenterPileProps)
                                     y,
                                 }}
                                 exit={{ scale: 0, y: -100 }}
-                                transition={{ type: "spring", damping: 15 }}
+                                transition={{ type: "spring", stiffness: 350, damping: 22 }}
                                 className="absolute"
                             >
-                                <div className={`relative ${isSenior ? "ring-2 ring-[#FFD700] ring-offset-2 ring-offset-[#0B0F1A]" : ""}`}>
+                                <div className="relative">
                                     <CardDisplay
                                         card={trickCard.card}
                                         isPlayable={false}
                                         small
+                                        isSenior={isSenior}
                                     />
                                     {trickCard.isThulla && (
                                         <motion.div
                                             initial={{ scale: 0 }}
                                             animate={{ scale: 1 }}
-                                            className="absolute -top-2 -right-2 text-xl"
+                                            className="absolute -top-2 -right-2 text-lg"
                                         >
                                             🔥
                                         </motion.div>
@@ -266,8 +347,11 @@ export function CenterPile({ trick, activeSuit, seniorCardId }: CenterPileProps)
                 </AnimatePresence>
 
                 {trick.length === 0 && (
-                    <div className="w-16 h-24 rounded-xl border-2 border-dashed border-white/20 flex items-center justify-center">
-                        <span className="text-[#607D8B] text-xs">Play here</span>
+                    <div
+                        className="w-14 h-20 rounded-xl border-2 border-dashed flex items-center justify-center"
+                        style={{ borderColor: "rgba(201, 162, 39, 0.3)" }}
+                    >
+                        <span className="text-xs" style={{ color: "#8fae94" }}>Play</span>
                     </div>
                 )}
             </div>
@@ -307,7 +391,7 @@ export function ThullaOverlay({ isVisible, pickupPlayerName }: ThullaOverlayProp
                         className="text-center"
                     >
                         <motion.h1
-                            className="text-7xl sm:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500"
+                            className="text-6xl sm:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500"
                             style={{
                                 textShadow: "0 0 40px rgba(255,0,0,0.8), 0 0 80px rgba(255,100,0,0.6)",
                                 WebkitTextStroke: "2px rgba(255,255,255,0.3)",
@@ -323,7 +407,7 @@ export function ThullaOverlay({ isVisible, pickupPlayerName }: ThullaOverlayProp
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
-                            className="mt-4 text-xl text-white font-semibold"
+                            className="mt-4 text-lg sm:text-xl text-white font-semibold"
                         >
                             {pickupPlayerName} picks up the pile! 🔥
                         </motion.p>
@@ -334,7 +418,7 @@ export function ThullaOverlay({ isVisible, pickupPlayerName }: ThullaOverlayProp
     );
 }
 
-// Game Finished Overlay
+// Game Finished Overlay - Casino style
 interface GameFinishedOverlayProps {
     isVisible: boolean;
     winnerName: string;
@@ -355,7 +439,8 @@ export function GameFinishedOverlay({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-xl"
+                    className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-xl"
+                    style={{ background: "rgba(10, 15, 12, 0.9)" }}
                 >
                     <motion.div
                         initial={{ scale: 0.5, y: 50 }}
@@ -365,22 +450,37 @@ export function GameFinishedOverlay({
                         <motion.div
                             animate={{ rotate: [0, 10, -10, 0] }}
                             transition={{ duration: 0.5, repeat: 3 }}
-                            className="text-8xl mb-6"
+                            className="text-7xl sm:text-8xl mb-6"
                         >
                             {isHumanWinner ? "🎉" : "🤖"}
                         </motion.div>
 
-                        <h1 className="text-4xl sm:text-5xl font-black text-white mb-4">
+                        <h1
+                            className="text-3xl sm:text-5xl font-black mb-4"
+                            style={{
+                                background: isHumanWinner
+                                    ? "linear-gradient(135deg, #c9a227 0%, #f5d67a 50%, #c9a227 100%)"
+                                    : "linear-gradient(135deg, #8fae94 0%, #4ade80 100%)",
+                                WebkitBackgroundClip: "text",
+                                WebkitTextFillColor: "transparent",
+                            }}
+                        >
                             {isHumanWinner ? "You Win!" : "Game Over!"}
                         </h1>
 
-                        <p className="text-xl text-[#B0BEC5] mb-8">
+                        <p className="text-lg" style={{ color: "#8fae94" }}>
                             {winnerName} finished first!
                         </p>
 
                         <motion.button
                             onClick={onRestart}
-                            className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#00E5FF] to-[#00B8D4] text-[#0B0F1A] font-bold text-lg shadow-lg shadow-[#00E5FF]/30"
+                            className="mt-8 px-8 py-4 rounded-xl font-bold text-lg transition-all"
+                            style={{
+                                background: "linear-gradient(135deg, #1a5c35 0%, #2d7a4a 50%, #1a5c35 100%)",
+                                border: "2px solid #c9a227",
+                                color: "#f5d67a",
+                                boxShadow: "0 4px 20px rgba(26, 92, 53, 0.4)",
+                            }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
